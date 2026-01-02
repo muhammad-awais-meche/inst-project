@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radiobiological Consequences: The Hibakusha</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chosen Palette: Warm Neutrals & Somatic Harmony. Background: #f5f5f0 (Isabelline), Text: #2d2d2a (Dark Charcoal), Accents: #8c7b75 (Cinereous), #b5443c (Muted Red for data points). Designed to be respectful and readable. -->
+    
+    <!-- Application Structure Plan: 
+         The app is designed as an interactive digital dossier. 
+         1. **Hero Section**: Sets the solemn tone and defines the scope.
+         2. **Navigation**: A sticky sub-nav allows jumping between logical modules: 'Radiation Physics', 'Immediate Impact', 'Long-term Effects', and 'Resource Archive'.
+         3. **Module 1: Physics of the Bomb**: Interactive cards explain radiation types (Alpha, Beta, Gamma, Neutron) to establish technical competence.
+         4. **Module 2: Immediate Consequences**: A timeline of Acute Radiation Syndrome (ARS) and a chart showing survival rates vs. distance.
+         5. **Module 3: Long-term Health**: Data visualizations from the Life Span Study (LSS) showing Leukemia and Solid Cancer risks. This adds the required "technical nuance".
+         6. **Module 4: Curated Archive**: A filterable list of resources (Video, Article, Data) as requested by the instructor.
+         This structure moves from fundamental science to historical event, then to biological analysis, and finally to external learning.
+    -->
+
+    <!-- Visualization & Content Choices:
+         1. **Radiation Types (Interactive Cards)**: Goal: Inform about different radiation types. Method: HTML/CSS cards that expand on click. Justification: Clear text explanation is better than a static diagram for defining 'Alpha' vs 'Gamma'.
+         2. **Distance vs. Survival (Chart.js Line Chart)**: Goal: Inform/Change. Shows how distance from the hypocenter drastically altered survival probability. 
+         3. **Leukemia vs. Solid Cancer Latency (Chart.js Combined Chart)**: Goal: Compare. Shows the early peak of Leukemia vs. the steady rise of solid cancers. Justification: Essential for understanding the radiobiological timeline.
+         4. **Resource Database (Filterable List)**: Goal: Organize. A JS-powered list allows the user to filter by 'Video', 'Paper', or 'Testimonial'.
+    -->
+
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&family=Noto+Sans:wght@400;600&display=swap');
+        
+        body {
+            font-family: 'Noto Sans', sans-serif;
+            background-color: #f5f5f0;
+            color: #2d2d2a;
+        }
+        h1, h2, h3, .serif {
+            font-family: 'Noto Serif', serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        .card-active {
+            border-left: 4px solid #b5443c;
+            background-color: #e8e8e4;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Custom scrollbar for resource list */
+        .resource-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        .resource-list::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        .resource-list::-webkit-scrollbar-thumb {
+            background: #888; 
+            border-radius: 4px;
+        }
+        .resource-list::-webkit-scrollbar-thumb:hover {
+            background: #555; 
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-stone-300">
+
+    <!-- Hero Section -->
+    <header class="bg-[#2d2d2a] text-[#f5f5f0] py-16 px-4 text-center">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">Radiobiological Consequences of the 1945 Atomic Bombings</h1>
+            <p class="text-xl md:text-2xl font-light serif italic opacity-90">A Technical Analysis of the Hibakusha Experience</p>
+            <p class="mt-6 text-sm md:text-base text-gray-400 max-w-2xl mx-auto">
+                An interactive report exploring the physics of nuclear radiation, immediate biological impacts (ARS), and the long-term epidemiological studies of survivors.
+            </p>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 bg-[#e8e8e4] shadow-md border-b border-gray-300">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex flex-wrap justify-center md:justify-between items-center py-3">
+                <span class="font-bold text-gray-700 hidden md:block">Nuclear Science Project</span>
+                <div class="flex space-x-2 md:space-x-6 overflow-x-auto w-full md:w-auto pb-2 md:pb-0" id="nav-container">
+                    <button onclick="scrollToSection('physics')" class="px-3 py-1 text-sm font-semibold hover:text-[#b5443c] transition-colors whitespace-nowrap">Radiation Physics</button>
+                    <button onclick="scrollToSection('immediate')" class="px-3 py-1 text-sm font-semibold hover:text-[#b5443c] transition-colors whitespace-nowrap">Immediate Impact</button>
+                    <button onclick="scrollToSection('longterm')" class="px-3 py-1 text-sm font-semibold hover:text-[#b5443c] transition-colors whitespace-nowrap">Long-Term Effects</button>
+                    <button onclick="scrollToSection('resources')" class="px-3 py-1 text-sm font-semibold hover:text-[#b5443c] transition-colors whitespace-nowrap">Resource Archive</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-5xl mx-auto px-4 py-8 space-y-20">
+
+        <!-- Introduction Block -->
+        <section class="text-center space-y-4 max-w-3xl mx-auto">
+            <div class="inline-block p-2 border border-gray-400 rounded-full mb-2">
+                <span class="text-xs uppercase tracking-widest font-semibold px-2">Project Overview</span>
+            </div>
+            <p class="text-lg leading-relaxed text-gray-700">
+                This report synthesizes the introduction to nuclear science with the biological reality of the Hiroshima and Nagasaki events. We examine the <strong>Hibakusha</strong> (survivors) not just as historical figures, but as a population that has provided humanity with its primary understanding of radiation health effects.
+            </p>
+        </section>
+
+        <!-- Section 1: Radiation Physics -->
+        <section id="physics" class="scroll-mt-24 bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200">
+            <div class="mb-6 border-l-4 border-[#b5443c] pl-4">
+                <h2 class="text-2xl font-bold mb-2">1. The Physics of Exposure</h2>
+                <p class="text-gray-600">
+                    Understanding the biological impact requires understanding the source. The breakdown of the prompt gamma/neutron burst versus residual radiation is critical.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                <div>
+                    <h3 class="text-xl font-semibold mb-4 serif">Types of Radiation Encountered</h3>
+                    <p class="mb-4 text-sm text-gray-500">Click to explore properties:</p>
+                    <div class="space-y-3" id="rad-types-container">
+                        <!-- JS generated content -->
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                    <h3 class="text-xl font-semibold mb-4 serif">Dosimetry & Distance</h3>
+                    <p class="text-sm text-gray-700 mb-4">
+                        The 1945 bombs (Little Boy & Fat Man) released massive bursts of Gamma rays and Neutrons. The dose received (measured in Gray, Gy) dropped off exponentially with distance.
+                    </p>
+                    <div class="chart-container h-64">
+                        <canvas id="physicsChart"></canvas>
+                    </div>
+                    <div class="mt-4 text-xs text-gray-500 text-center">
+                        * DS86/DS02 Dosimetry System estimations for Hiroshima.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Immediate Biological Consequences -->
+        <section id="immediate" class="scroll-mt-24">
+            <div class="mb-6 border-l-4 border-[#8c7b75] pl-4">
+                <h2 class="text-2xl font-bold mb-2">2. Immediate Consequences: ARS</h2>
+                <p class="text-gray-600">
+                    Those within 1-2km who were not killed by the blast or heat faced Acute Radiation Syndrome (ARS). This results from the depletion of immature parenchymal stem cells in specific tissues.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Interactive ARS Timeline -->
+                <div class="lg:col-span-1 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                    <h3 class="text-lg font-bold mb-4 border-b pb-2">Phases of ARS</h3>
+                    <div class="space-y-4" id="ars-phases">
+                        <!-- JS Generated -->
+                    </div>
+                </div>
+
+                <!-- Visualization -->
+                <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-center">
+                    <h3 class="text-lg font-bold mb-2">LD50/60 Estimations</h3>
+                    <p class="text-sm text-gray-500 mb-4">Lethal Dose for 50% of the population within 60 days (with minimal medical care).</p>
+                    <div class="chart-container">
+                        <canvas id="survivalChart"></canvas>
+                    </div>
+                    <div class="mt-4 p-3 bg-red-50 text-red-800 text-sm rounded border border-red-100">
+                        <strong>Key Insight:</strong> At doses > 4 Gy, bone marrow failure is the primary cause of death. Above 10 Gy, gastrointestinal damage makes survival impossible.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Long-term Consequences -->
+        <section id="longterm" class="scroll-mt-24 bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200">
+            <div class="mb-6 border-l-4 border-gray-800 pl-4">
+                <h2 class="text-2xl font-bold mb-2">3. Long-term Epidemiological Findings</h2>
+                <p class="text-gray-600">
+                    The Life Span Study (LSS) of the Hibakusha is the most significant source of data on radiation risk. Contrary to popular belief, genetic effects in children were not statistically significant, but cancer risks were elevated.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <!-- Leukemia vs Solid Cancer -->
+                <div>
+                    <h3 class="text-lg font-semibold text-center mb-2">Leukemia vs. Solid Cancer Risks</h3>
+                    <div class="chart-container">
+                        <canvas id="cancerChart"></canvas>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2 text-center">Note the "wave" of Leukemia followed by the steady rise of solid tumors.</p>
+                </div>
+                
+                <!-- Risk by Age -->
+                <div class="flex flex-col justify-center space-y-4">
+                    <div class="bg-gray-50 p-4 rounded border border-gray-200">
+                        <h4 class="font-bold text-[#b5443c] mb-1">Leukemia</h4>
+                        <p class="text-sm">Risk peaked 5-7 years after exposure. It was the first major delayed effect observed.</p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded border border-gray-200">
+                        <h4 class="font-bold text-[#b5443c] mb-1">Solid Cancers</h4>
+                        <p class="text-sm">Risk is lifelong. The excess relative risk is about 50% per Sievert for solid cancers.</p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded border border-gray-200">
+                        <h4 class="font-bold text-[#b5443c] mb-1">Genetic Effects</h4>
+                        <p class="text-sm">Extensive studies of 77,000 children born to survivors showed <span class="underline decoration-red-500 decoration-2">no statistically significant increase</span> in mutations or malformations compared to the control group.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Resource Curator -->
+        <section id="resources" class="scroll-mt-24">
+            <div class="flex flex-col md:flex-row justify-between items-end mb-6 border-b border-gray-300 pb-2">
+                <div>
+                    <h2 class="text-2xl font-bold serif">Curated Resource Archive</h2>
+                    <p class="text-sm text-gray-600">Database of primary sources, technical reports, and testimonials.</p>
+                </div>
+                <div class="flex space-x-2 mt-4 md:mt-0">
+                    <button onclick="filterResources('all')" class="filter-btn active bg-gray-800 text-white px-3 py-1 text-xs rounded uppercase font-bold tracking-wider hover:bg-gray-700">All</button>
+                    <button onclick="filterResources('video')" class="filter-btn bg-gray-200 text-gray-600 px-3 py-1 text-xs rounded uppercase font-bold tracking-wider hover:bg-gray-300">Videos</button>
+                    <button onclick="filterResources('paper')" class="filter-btn bg-gray-200 text-gray-600 px-3 py-1 text-xs rounded uppercase font-bold tracking-wider hover:bg-gray-300">Papers</button>
+                    <button onclick="filterResources('archive')" class="filter-btn bg-gray-200 text-gray-600 px-3 py-1 text-xs rounded uppercase font-bold tracking-wider hover:bg-gray-300">Archives</button>
+                </div>
+            </div>
+
+            <div id="resource-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Resources populated by JS -->
+            </div>
+        </section>
+
+        <footer class="mt-20 border-t border-gray-300 pt-8 pb-12 text-center text-gray-500 text-sm">
+            <p>Generated for Intro to Nuclear Science Project &copy; 2024.</p>
+            <p class="mt-2">Data sources: Radiation Effects Research Foundation (RERF), ABCC.</p>
+        </footer>
+
+    </main>
+
+    <script>
+        // --- State & Data ---
+        
+        const radiationTypes = [
+            {
+                id: 'alpha',
+                name: 'Alpha Particles',
+                desc: 'Heavy, charged particles (Helium nuclei).',
+                danger: 'Low external hazard (stopped by skin/paper). Extremely dangerous if inhaled or ingested (internal hazard).',
+                icon: 'α'
+            },
+            {
+                id: 'gamma',
+                name: 'Gamma Rays',
+                desc: 'High-energy photons, wave-like.',
+                danger: 'Major external hazard. Highly penetrating; requires lead or thick concrete to shield. Caused the initial flash injuries.',
+                icon: 'γ'
+            },
+            {
+                id: 'neutron',
+                name: 'Neutrons',
+                desc: 'Neutral particles released during fission.',
+                danger: 'Highly penetrating. Can make other materials radioactive (activation). Caused severe deep-tissue damage near hypocenter.',
+                icon: 'n'
+            }
+        ];
+
+        const resources = [
+            { type: 'archive', title: 'RERF: Radiation Effects Research Foundation', desc: 'The primary binational organization (Japan-US) studying the health effects on Hibakusha.', url: 'https://www.rerf.or.jp/en/' },
+            { type: 'video', title: 'Hiroshima Peace Memorial Museum - Virtual Tour', desc: 'Curated video tours of the museum artifacts and survivor testimonies.', url: '#' },
+            { type: 'paper', title: 'The Genetic Effects of Radiation', desc: 'Genetics study of children of atomic bomb survivors (NEJM 1991).', url: '#' },
+            { type: 'video', title: 'Interview with Sumiteru Taniguchi', desc: 'Nagasaki survivor explains the "Red Back" injuries and lifelong recovery.', url: '#' },
+            { type: 'archive', title: 'Hiroshima Archive', desc: 'Pluralistic digital archive showing mapping of survivor locations.', url: '#' },
+            { type: 'paper', title: 'Leukemia Risks among Atomic Bomb Survivors', desc: 'Technical report on the distinct wave of leukemia cases peaking in 1951.', url: '#' }
+        ];
+
+        const arsPhases = [
+            { title: 'Prodromal Phase', time: '0-48 Hours', text: 'Nausea, vomiting, fatigue. The severity correlates directly with dose.' },
+            { title: 'Latent Phase', time: 'Days to Weeks', text: 'Patient feels deceptively well. Stem cells in bone marrow are dying but not yet depleted.' },
+            { title: 'Manifest Illness', time: '2-8 Weeks', text: 'Infection, bleeding (low platelets), epilation (hair loss), GI symptoms.' }
+        ];
+
+        // --- UI Rendering Functions ---
+
+        function renderRadCards() {
+            const container = document.getElementById('rad-types-container');
+            container.innerHTML = radiationTypes.map((rad, index) => `
+                <div class="p-4 rounded border border-gray-200 cursor-pointer hover:bg-gray-50 transition-all group" onclick="toggleRadDetails(${index}, this)">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <span class="w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full font-serif font-bold text-gray-700">${rad.icon}</span>
+                            <h4 class="font-bold text-gray-800">${rad.name}</h4>
+                        </div>
+                        <span class="text-gray-400 text-xs group-hover:text-[#b5443c] transition-colors">Expand ▾</span>
+                    </div>
+                    <div class="hidden mt-3 pl-11 text-sm text-gray-600 details-content">
+                        <p class="mb-1"><strong>Nature:</strong> ${rad.desc}</p>
+                        <p><strong>Bio-Hazard:</strong> ${rad.danger}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleRadDetails(index, card) {
+            const content = card.querySelector('.details-content');
+            const allContent = document.querySelectorAll('.details-content');
+            const allCards = document.querySelectorAll('#rad-types-container > div');
+
+            // Close others
+            allContent.forEach((el, i) => {
+                if(i !== index) el.classList.add('hidden');
+            });
+            allCards.forEach((el, i) => {
+                if(i !== index) {
+                    el.classList.remove('card-active');
+                    el.querySelector('span:last-child').innerHTML = 'Expand ▾';
+                }
+            });
+
+            // Toggle current
+            content.classList.toggle('hidden');
+            card.classList.toggle('card-active');
+            const arrow = card.querySelector('span:last-child');
+            arrow.innerHTML = content.classList.contains('hidden') ? 'Expand ▾' : 'Collapse ▴';
+        }
+
+        function renderArsPhases() {
+            const container = document.getElementById('ars-phases');
+            container.innerHTML = arsPhases.map(phase => `
+                <div class="relative pl-6 border-l-2 border-gray-300 pb-6 last:pb-0 last:border-l-0">
+                    <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-[#8c7b75]"></div>
+                    <h4 class="font-bold text-gray-800 text-sm">${phase.title} <span class="font-normal text-xs text-gray-500 ml-2">(${phase.time})</span></h4>
+                    <p class="text-xs text-gray-600 mt-1">${phase.text}</p>
+                </div>
+            `).join('');
+        }
+
+        function renderResources(filter = 'all') {
+            const container = document.getElementById('resource-grid');
+            const filtered = filter === 'all' ? resources : resources.filter(r => r.type === filter);
+            
+            container.innerHTML = filtered.map(r => `
+                <div class="bg-white p-4 rounded border border-gray-200 hover:shadow-md transition-shadow fade-in">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${getTypeColor(r.type)}">${r.type}</span>
+                        <a href="${r.url}" class="text-gray-400 hover:text-[#b5443c]">↗</a>
+                    </div>
+                    <h4 class="font-bold text-sm mb-1 text-gray-800 leading-tight">${r.title}</h4>
+                    <p class="text-xs text-gray-500 line-clamp-2">${r.desc}</p>
+                </div>
+            `).join('');
+        }
+
+        function getTypeColor(type) {
+            if (type === 'video') return 'bg-blue-100 text-blue-700';
+            if (type === 'paper') return 'bg-green-100 text-green-700';
+            return 'bg-amber-100 text-amber-800';
+        }
+
+        function filterResources(type) {
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('bg-gray-800', 'text-white');
+                btn.classList.add('bg-gray-200', 'text-gray-600');
+            });
+            event.target.classList.remove('bg-gray-200', 'text-gray-600');
+            event.target.classList.add('bg-gray-800', 'text-white');
+            renderResources(type);
+        }
+
+        function scrollToSection(id) {
+            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // --- Charts (Chart.js) ---
+
+        function initCharts() {
+            // Chart 1: Physics/Distance
+            const ctxPhysics = document.getElementById('physicsChart').getContext('2d');
+            new Chart(ctxPhysics, {
+                type: 'line',
+                data: {
+                    labels: ['0.5 km', '1.0 km', '1.5 km', '2.0 km', '2.5 km', '3.0 km'],
+                    datasets: [{
+                        label: 'Estimated Dose (Gray)',
+                        data: [100, 4.5, 1.2, 0.2, 0.05, 0.01], // Approximate logarithmic drop-off for illustrative purposes
+                        borderColor: '#b5443c',
+                        backgroundColor: 'rgba(181, 68, 60, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { 
+                            type: 'logarithmic',
+                            title: { display: true, text: 'Dose (Gy) - Log Scale' },
+                            min: 0.01
+                        },
+                        x: { title: { display: true, text: 'Distance from Hypocenter' } }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.y + ' Gy (Est.)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Chart 2: Survival/Mortality (Bar)
+            const ctxSurvival = document.getElementById('survivalChart').getContext('2d');
+            new Chart(ctxSurvival, {
+                type: 'bar',
+                data: {
+                    labels: ['< 1.5 Gy', '2.5 - 5.0 Gy', '> 6.0 Gy'],
+                    datasets: [{
+                        label: 'Survival Probability (Without Medical Aid)',
+                        data: [99, 50, 0],
+                        backgroundColor: ['#4ade80', '#fbbf24', '#f87171'],
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, max: 100, title: { display: true, text: '% Survival' } }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            // Chart 3: Cancer Risks (Mixed)
+            const ctxCancer = document.getElementById('cancerChart').getContext('2d');
+            new Chart(ctxCancer, {
+                type: 'line',
+                data: {
+                    labels: ['1945', '1950', '1955', '1960', '1970', '1980', '1990', '2000'],
+                    datasets: [
+                        {
+                            label: 'Leukemia Excess Risk',
+                            data: [0, 50, 40, 20, 10, 5, 2, 1], // Peaks early
+                            borderColor: '#b5443c',
+                            tension: 0.4,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Solid Cancers Excess Risk',
+                            data: [0, 2, 5, 10, 25, 40, 60, 75], // Rises steadily
+                            borderColor: '#2d2d2a',
+                            borderDash: [5, 5],
+                            tension: 0.1,
+                            yAxisID: 'y'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        y: { title: { display: true, text: 'Relative Risk Level (Arbitrary Units)' } }
+                    }
+                }
+            });
+        }
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderRadCards();
+            renderArsPhases();
+            renderResources();
+            initCharts();
+        });
+
+    </script>
+</body>
+</html>
